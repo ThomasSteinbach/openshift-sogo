@@ -1,0 +1,396 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations: {}
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: sogo
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+        openshift.io/imported-from: thomass/sogo:latest
+      from:
+        kind: DockerImage
+        name: thomass/sogo:latest
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations: {}
+    creationTimestamp: null
+    labels:
+      app: sogo-httpd
+    name: sogo-httpd
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+        openshift.io/imported-from: thomass/sogo-httpd:latest
+      from:
+        kind: DockerImage
+        name: thomass/sogo-httpd:latest
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    annotations: {}
+    creationTimestamp: null
+    labels:
+      app: sogo
+      template: mysql-persistent-template
+    name: mysql
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: null
+    name: builder
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: null
+    name: default
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: null
+    name: deployer
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    creationTimestamp: null
+    labels:
+      app: sogo
+      template: mysql-persistent-template
+    name: mysql
+  spec:
+    replicas: 1
+    selector:
+      name: mysql
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: mysql
+      spec:
+        containers:
+        - env:
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: mysql
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: mysql
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-root-password
+                name: mysql
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: database-name
+                name: mysql
+          image: centos/mysql-57-centos7@sha256:437b8bbacb084d2005cf17fe6ea91cad01260d1cbc75bf3cc00bc3deb17f9022
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3306
+            timeoutSeconds: 1
+          name: mysql
+          ports:
+          - containerPort: 3306
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE
+                -e 'SELECT 1'
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/mysql/data
+            name: mysql-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - mysql
+        from:
+          kind: ImageStreamTag
+          name: mysql:5.7
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftWebConsole
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: sogo
+  spec:
+    replicas: 1
+    selector:
+      app: sogo
+      deploymentconfig: sogo
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftWebConsole
+        creationTimestamp: null
+        labels:
+          app: sogo
+          deploymentconfig: sogo
+      spec:
+        containers:
+        - env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-root-password
+                name: mysql
+          image: thomass/sogo@sha256:982a3f89afbef2984b303cb178dd2772bed4ff3f4fcf1cdac5d6d4981556c0b8
+          imagePullPolicy: Always
+          name: sogo
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /backups
+            name: sogo-1
+          - mountPath: /etc/sogo
+            name: sogo-2
+          - mountPath: /var/log/sogo
+            name: sogo-3
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: sogo-1
+        - emptyDir: {}
+          name: sogo-2
+        - emptyDir: {}
+          name: sogo-3
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - sogo
+        from:
+          kind: ImageStreamTag
+          name: sogo:latest
+          namespace: OC_PROJECT_NAME
+      type: ImageChange
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftWebConsole
+    creationTimestamp: null
+    labels:
+      app: sogo-httpd
+    name: sogo-httpd
+  spec:
+    replicas: 1
+    selector:
+      app: sogo-httpd
+      deploymentconfig: sogo-httpd
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftWebConsole
+        creationTimestamp: null
+        labels:
+          app: sogo-httpd
+          deploymentconfig: sogo-httpd
+      spec:
+        containers:
+        - env:
+          - name: SERVER_NAME
+            value: http://sogo-httpd-sogo.127.0.0.1.nip.io
+          image: thomass/sogo-httpd@sha256:80336f8467f4be159929b2fbde66d38c73e70ae25e0145c7b3339cc74cee8036
+          imagePullPolicy: Always
+          name: sogo-httpd
+          ports:
+          - containerPort: 80
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - sogo-httpd
+        from:
+          kind: ImageStreamTag
+          name: sogo-httpd:latest
+          namespace: OC_PROJECT_NAME
+      type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      template.openshift.io/expose-uri: mysql://{.spec.clusterIP}:{.spec.ports[?(.name=="mysql")].port}
+    creationTimestamp: null
+    labels:
+      app: sogo
+      template: mysql-persistent-template
+    name: mysql
+  spec:
+    ports:
+    - name: mysql
+      port: 3306
+      protocol: TCP
+      targetPort: 3306
+    selector:
+      name: mysql
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: sogo
+  spec:
+    ports:
+    - port: 20000
+      protocol: TCP
+      targetPort: 20000
+    selector:
+      app: sogo
+      deploymentconfig: sogo
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftWebConsole
+    creationTimestamp: null
+    labels:
+      app: sogo-httpd
+    name: sogo-httpd
+  spec:
+    ports:
+    - name: 80-tcp
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    selector:
+      deploymentconfig: sogo-httpd
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: 'true'
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: sogo-httpd
+  spec:
+    host: sogo-httpd-OC_PROJECT_NAME.127.0.0.1.nip.io
+    port:
+      targetPort: 80-tcp
+    to:
+      kind: Service
+      name: sogo-httpd
+      weight: 100
+    wildcardPolicy: None
+kind: List
+metadata: {}
