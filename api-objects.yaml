@@ -270,10 +270,10 @@ items:
       spec:
         containers:
         - env:
-          - name: MYSQL_ROOT_PASSWORD
+          - name: MYSQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: database-root-password
+                key: database-password
                 name: gitlab-secrets
           image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:8cd72882fa158b2d97399e4169ade9d416d4cc9ab52b9480736c3b46d09d33a6
           imagePullPolicy: Always
