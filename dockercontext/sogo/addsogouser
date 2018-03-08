@@ -1,0 +1,8 @@
+#!/bin/bash
+
+read -p "unique login (e.g. nickname): " uid
+read -p "surename name: " name
+read -s -p "password: " password
+read -p "email: " email
+
+mysql -hMYSQL_HOST -PMYSQL_PORT -uMYSQL_USER -pMYSQL_PASSWORD -DMYSQL_DATABASE -e "INSERT INTO sogo_users VALUES ('${uid}', '${uid}', MD5('${password}'), '${name}', '${email}');"

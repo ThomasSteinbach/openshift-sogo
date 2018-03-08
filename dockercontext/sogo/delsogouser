@@ -1,0 +1,4 @@
+#!/bin/bash
+read -p "unique login: " uid
+
+mysql -hMYSQL_HOST -PMYSQL_PORT -uMYSQL_USER -pMYSQL_PASSWORD -DMYSQL_DATABASE -e "DELETE FROM sogo_users WHERE c_uid = '${uid}';"

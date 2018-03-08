@@ -1,0 +1,7 @@
+#!/bin/bash
+cd /backups
+for i in $(ls)
+{
+ sudo -u sogo sogo-tool restore -p /backups $i
+ sudo -u sogo sogo-tool restore -f ALL /backups $i
+}
