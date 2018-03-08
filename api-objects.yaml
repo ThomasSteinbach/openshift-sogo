@@ -3,47 +3,36 @@ items:
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    annotations: {}
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
     creationTimestamp: null
     labels:
-      app: sogo
+      build: sogo
     name: sogo
   spec:
     lookupPolicy:
       local: false
     tags:
-    - annotations:
-        openshift.io/generated-by: OpenShiftWebConsole
-        openshift.io/imported-from: thomass/sogo:latest
+    - annotations: null
       from:
         kind: DockerImage
-        name: thomass/sogo:latest
+        name: 172.30.1.1:5000/OC_PROJECT_NAME/sogo:latest
       importPolicy: {}
       name: latest
       referencePolicy:
-        type: Source
+        type: ''
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    annotations: {}
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
     creationTimestamp: null
     labels:
-      app: sogo-httpd
+      build: sogo-httpd
     name: sogo-httpd
   spec:
     lookupPolicy:
       local: false
-    tags:
-    - annotations:
-        openshift.io/generated-by: OpenShiftWebConsole
-        openshift.io/imported-from: thomass/sogo-httpd:latest
-      from:
-        kind: DockerImage
-        name: thomass/sogo-httpd:latest
-      importPolicy: {}
-      name: latest
-      referencePolicy:
-        type: Source
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
@@ -62,18 +51,92 @@ items:
 - apiVersion: v1
   kind: ServiceAccount
   metadata:
+    annotations: {}
     creationTimestamp: null
     name: builder
 - apiVersion: v1
   kind: ServiceAccount
   metadata:
+    annotations: {}
     creationTimestamp: null
     name: default
 - apiVersion: v1
   kind: ServiceAccount
   metadata:
+    annotations: {}
     creationTimestamp: null
     name: deployer
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
+    creationTimestamp: null
+    labels:
+      build: sogo
+    name: sogo
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: sogo:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      binary: {}
+      contextDir: dockercontext/sogo
+      type: Binary
+    strategy:
+      dockerStrategy: {}
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: EkmLq2d-f7nWAHQ3MMIe
+      type: GitHub
+    - generic:
+        secret: 0bM1Cp3XgSDSJZKmb5Ax
+      type: Generic
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
+    creationTimestamp: null
+    labels:
+      build: sogo-httpd
+    name: sogo-httpd
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: sogo-httpd:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      binary: {}
+      contextDir: dockercontext/sogo-httpd
+      type: Binary
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: sogo:latest
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: aelrRcTIOhLJNbdzSMVd
+      type: GitHub
+    - generic:
+        secret: pMJZg7ShrfSL4m7PjCup
+      type: Generic
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -212,7 +275,7 @@ items:
               secretKeyRef:
                 key: database-root-password
                 name: gitlab-secrets
-          image: thomass/sogo@sha256:982a3f89afbef2984b303cb178dd2772bed4ff3f4fcf1cdac5d6d4981556c0b8
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:8cd72882fa158b2d97399e4169ade9d416d4cc9ab52b9480736c3b46d09d33a6
           imagePullPolicy: Always
           name: sogo
           resources: {}
@@ -335,6 +398,7 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
+    annotations: {}
     creationTimestamp: null
     labels:
       app: sogo
