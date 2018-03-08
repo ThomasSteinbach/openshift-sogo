@@ -103,25 +103,19 @@ items:
         containers:
         - env:
           - name: MYSQL_USER
-            valueFrom:
-              secretKeyRef:
-                key: database-user
-                name: mysql
+            value: sogo
           - name: MYSQL_PASSWORD
             valueFrom:
               secretKeyRef:
                 key: database-password
-                name: mysql
+                name: gitlab-secrets
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
                 key: database-root-password
-                name: mysql
+                name: gitlab-secrets
           - name: MYSQL_DATABASE
-            valueFrom:
-              secretKeyRef:
-                key: database-name
-                name: mysql
+            value: sogo
           image: centos/mysql-57-centos7@sha256:437b8bbacb084d2005cf17fe6ea91cad01260d1cbc75bf3cc00bc3deb17f9022
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -217,7 +211,7 @@ items:
             valueFrom:
               secretKeyRef:
                 key: database-root-password
-                name: mysql
+                name: gitlab-secrets
           image: thomass/sogo@sha256:982a3f89afbef2984b303cb178dd2772bed4ff3f4fcf1cdac5d6d4981556c0b8
           imagePullPolicy: Always
           name: sogo
