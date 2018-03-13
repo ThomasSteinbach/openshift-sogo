@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 MYSQL_HOST="${SOGO_MYSQL_HOST:-mysql}"
 MYSQL_PORT="${SOGO_MYSQL_PORT:-3306}"
 MYSQL_USER="${SOGO_MYSQL_USER:-sogo}"

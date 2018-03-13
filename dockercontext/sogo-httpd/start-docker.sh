@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 SERVER_PROTOCOL=${SERVER_PROTOCOL:-http}
 SERVER_NAME=${SERVER_NAME:-localhost}
 SERVER_PORT=${SERVER_PORT:-80}
