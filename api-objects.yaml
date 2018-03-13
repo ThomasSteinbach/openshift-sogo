@@ -355,7 +355,7 @@ items:
         - env:
           - name: SERVER_NAME
             value: http://sogo-httpd-sogo.127.0.0.1.nip.io
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:309743565be2ca7310a21180df4b5715e04e902202d30b681c028a7293806d5b
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:9a7030aa447f451b9673c4a96dd3551a79ce7743c7acdf19b578bbe59c60cb46
           imagePullPolicy: Always
           name: sogo-httpd
           ports:
