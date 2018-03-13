@@ -6,7 +6,10 @@ RUN apt-get update && \
     echo "deb https://packages.inverse.ca/SOGo/nightly/2/ubuntu xenial xenial" >> /etc/apt/sources.list && \
     apt-key adv --keyserver keys.gnupg.net --recv-key 0x810273C4 && \
     apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y sogo && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      sogo \
+      sudo \
+      mysql-client && \
     apt-get clean
 
 COPY start.sh /usr/local/bin/start.sh
