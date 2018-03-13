@@ -177,12 +177,12 @@ items:
             valueFrom:
               secretKeyRef:
                 key: database-password
-                name: gitlab-secrets
+                name: sogo-secrets
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
                 key: database-root-password
-                name: gitlab-secrets
+                name: sogo-secrets
           - name: MYSQL_DATABASE
             value: sogo
           image: centos/mysql-57-centos7@sha256:437b8bbacb084d2005cf17fe6ea91cad01260d1cbc75bf3cc00bc3deb17f9022
@@ -280,7 +280,7 @@ items:
             valueFrom:
               secretKeyRef:
                 key: database-password
-                name: gitlab-secrets
+                name: sogo-secrets
           image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:412b3827f02c3cabdfa563825ebb77618fd92d8a680a42a61165c1707e039192
           imagePullPolicy: Always
           name: sogo
