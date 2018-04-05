@@ -19,7 +19,7 @@ items:
         kind: DockerImage
         name: memcached:1-alpine
       importPolicy: {}
-      name: 1-alpine
+      name: latest
       referencePolicy:
         type: Source
 - apiVersion: v1
@@ -259,7 +259,7 @@ items:
         - memcached
         from:
           kind: ImageStreamTag
-          name: memcached:1-alpine
+          name: memcached:latest
           namespace: OC_PROJECT_NAME
       type: ImageChange
 - apiVersion: v1
