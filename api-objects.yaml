@@ -3,6 +3,28 @@ items:
 - apiVersion: v1
   kind: ImageStream
   metadata:
+    annotations: {}
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: memcached
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/generated-by: OpenShiftWebConsole
+        openshift.io/imported-from: memcached:1-alpine
+      from:
+        kind: DockerImage
+        name: memcached:1-alpine
+      importPolicy: {}
+      name: 1-alpine
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
     annotations:
       openshift.io/generated-by: OpenShiftNewBuild
     creationTimestamp: null
@@ -41,22 +63,59 @@ items:
       importPolicy: {}
       name: latest
       referencePolicy:
-        type: ''
+        type: Source
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
     annotations: {}
     creationTimestamp: null
-    labels:
-      app: sogo
-      template: mysql-persistent-template
-    name: mysql
+    name: backups
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 20Gi
+    volumeName: sogo-backups
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    annotations: {}
+    creationTimestamp: null
+    name: etc-sogo
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+    volumeName: sogo-etc-sogo
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    annotations: {}
+    creationTimestamp: null
+    name: var-lib-mysql-data
   spec:
     accessModes:
     - ReadWriteOnce
     resources:
       requests:
         storage: 10Gi
+    volumeName: sogo-var-lib-mysql-data
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    annotations: {}
+    creationTimestamp: null
+    name: var-log-sogo
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 5Gi
+    volumeName: sogo-var-log-sogo
 - apiVersion: v1
   kind: ServiceAccount
   metadata:
@@ -147,6 +206,66 @@ items:
   kind: DeploymentConfig
   metadata:
     annotations:
+      openshift.io/generated-by: OpenShiftWebConsole
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: memcached
+  spec:
+    replicas: 1
+    selector:
+      app: sogo
+      deploymentconfig: memcached
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftWebConsole
+        creationTimestamp: null
+        labels:
+          app: sogo
+          deploymentconfig: memcached
+      spec:
+        containers:
+        - image: memcached@sha256:11157b52ee72427fe5d0fe457e8cecb01598653e9754319fa597a7361a33710a
+          imagePullPolicy: IfNotPresent
+          name: memcached
+          ports:
+          - containerPort: 11211
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - memcached
+        from:
+          kind: ImageStreamTag
+          name: memcached:1-alpine
+          namespace: OC_PROJECT_NAME
+      type: ImageChange
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
       template.alpha.openshift.io/wait-for-ready: 'true'
     creationTimestamp: null
     labels:
@@ -185,7 +304,7 @@ items:
                 name: sogo-secrets
           - name: MYSQL_DATABASE
             value: sogo
-          image: centos/mysql-57-centos7@sha256:437b8bbacb084d2005cf17fe6ea91cad01260d1cbc75bf3cc00bc3deb17f9022
+          image: centos/mysql-57-centos7@sha256:d5632b029709619bc6982ad41defe20d2f61d1a0f757b77a6fa6638d3b9b7994
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -219,16 +338,16 @@ items:
           terminationMessagePolicy: File
           volumeMounts:
           - mountPath: /var/lib/mysql/data
-            name: mysql-data
+            name: var-lib-mysql-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext: {}
         terminationGracePeriodSeconds: 30
         volumes:
-        - name: mysql-data
+        - name: var-lib-mysql-data
           persistentVolumeClaim:
-            claimName: mysql
+            claimName: var-lib-mysql-data
     test: false
     triggers:
     - imageChangeParams:
@@ -281,7 +400,7 @@ items:
               secretKeyRef:
                 key: database-password
                 name: sogo-secrets
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:412b3827f02c3cabdfa563825ebb77618fd92d8a680a42a61165c1707e039192
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:a43e6e119fc140fc8d60e439fbb85f1e0170a02ec6df71914f71cb20b831c1db
           imagePullPolicy: Always
           name: sogo
           resources: {}
@@ -289,23 +408,26 @@ items:
           terminationMessagePolicy: File
           volumeMounts:
           - mountPath: /backups
-            name: sogo-1
+            name: backups
           - mountPath: /etc/sogo
-            name: sogo-2
+            name: etc-sogo
           - mountPath: /var/log/sogo
-            name: sogo-3
+            name: var-log-sogo
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext: {}
         terminationGracePeriodSeconds: 30
         volumes:
-        - emptyDir: {}
-          name: sogo-1
-        - emptyDir: {}
-          name: sogo-2
-        - emptyDir: {}
-          name: sogo-3
+        - name: backups
+          persistentVolumeClaim:
+            claimName: backups
+        - name: etc-sogo
+          persistentVolumeClaim:
+            claimName: etc-sogo
+        - name: var-log-sogo
+          persistentVolumeClaim:
+            claimName: var-log-sogo
     test: false
     triggers:
     - type: ConfigChange
@@ -354,8 +476,8 @@ items:
         containers:
         - env:
           - name: SERVER_NAME
-            value: http://sogo-httpd-sogo.127.0.0.1.nip.io
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:9a7030aa447f451b9673c4a96dd3551a79ce7743c7acdf19b578bbe59c60cb46
+            value: sogo-httpd-sogo.127.0.0.1.nip.io
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:667f6dc1043015a923fe7585348f7280f5c5fa83cb0598bb6e5c7d170542bf33
           imagePullPolicy: Always
           name: sogo-httpd
           ports:
@@ -381,6 +503,25 @@ items:
           name: sogo-httpd:latest
           namespace: OC_PROJECT_NAME
       type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftWebConsole
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: memcached
+  spec:
+    ports:
+    - name: 11211-tcp
+      port: 11211
+      protocol: TCP
+      targetPort: 11211
+    selector:
+      deploymentconfig: memcached
+    sessionAffinity: None
+    type: ClusterIP
 - apiVersion: v1
   kind: Service
   metadata:
