@@ -4,6 +4,6 @@ sudo oc adm policy add-scc-to-user anyuid -z default -n sogo
 oc new-app -f secret-template.yaml
 oc-apply
 sleep 5
-oc start-build sogo --from-dir .
+oc start-build sogo
 sleep 120
-oc start-build sogo-httpd --from-dir .
+oc start-build sogo-httpd

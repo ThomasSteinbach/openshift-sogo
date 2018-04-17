@@ -3,6 +3,25 @@ items:
 - apiVersion: v1
   kind: ImageStream
   metadata:
+    labels:
+      app: nextcloud
+    name: mysql
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: mysql:5.7
+      from:
+        kind: DockerImage
+        name: mysql:5.7
+      importPolicy: {}
+      name: "latest"
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
     annotations: {}
     creationTimestamp: null
     labels:
@@ -95,14 +114,14 @@ items:
   metadata:
     annotations: {}
     creationTimestamp: null
-    name: var-lib-mysql-data
+    name: var-lib-mysql
   spec:
     accessModes:
     - ReadWriteOnce
     resources:
       requests:
         storage: 10Gi
-    volumeName: sogo-var-lib-mysql-data
+    volumeName: sogo-var-lib-mysql
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
@@ -154,9 +173,9 @@ items:
     resources: {}
     runPolicy: Serial
     source:
-      binary: {}
+      git:
+        uri: "https://gitlab.com/thomassteinbach/openshift-sogo.git"
       contextDir: dockercontext/sogo
-      type: Binary
     strategy:
       dockerStrategy: {}
       type: Docker
@@ -188,9 +207,9 @@ items:
     resources: {}
     runPolicy: Serial
     source:
-      binary: {}
+      git:
+        uri: "https://gitlab.com/thomassteinbach/openshift-sogo.git"
       contextDir: dockercontext/sogo-httpd
-      type: Binary
     strategy:
       dockerStrategy: {}
       type: Docker
@@ -286,7 +305,6 @@ items:
     creationTimestamp: null
     labels:
       app: sogo
-      template: mysql-persistent-template
     name: mysql
   spec:
     replicas: 1
@@ -306,13 +324,6 @@ items:
       spec:
         containers:
         - env:
-          - name: MYSQL_USER
-            value: sogo
-          - name: MYSQL_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: database-password
-                name: sogo-secrets
           - name: MYSQL_ROOT_PASSWORD
             valueFrom:
               secretKeyRef:
@@ -320,7 +331,7 @@ items:
                 name: sogo-secrets
           - name: MYSQL_DATABASE
             value: sogo
-          image: centos/mysql-57-centos7@sha256:57d67c4a85e8d822a606adf526d36b39f6ba2a45f9f1c5f06ec0a0a3c8cad5f1
+          image: mysql:5.7
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -340,7 +351,7 @@ items:
               - /bin/sh
               - -i
               - -c
-              - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE
+              - MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -h 127.0.0.1 -u root -D $MYSQL_DATABASE
                 -e 'SELECT 1'
             failureThreshold: 3
             initialDelaySeconds: 5
@@ -353,17 +364,17 @@ items:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-          - mountPath: /var/lib/mysql/data
-            name: var-lib-mysql-data
+          - mountPath: /var/lib/mysql
+            name: var-lib-mysql
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext: {}
         terminationGracePeriodSeconds: 30
         volumes:
-        - name: var-lib-mysql-data
+        - name: var-lib-mysql
           persistentVolumeClaim:
-            claimName: var-lib-mysql-data
+            claimName: var-lib-mysql
     test: false
     triggers:
     - imageChangeParams:
@@ -372,7 +383,7 @@ items:
         - mysql
         from:
           kind: ImageStreamTag
-          name: mysql:5.7
+          name: mysql:latest
           namespace: openshift
       type: ImageChange
     - type: ConfigChange
@@ -586,7 +597,6 @@ items:
     creationTimestamp: null
     labels:
       app: sogo
-      template: mysql-persistent-template
     name: mysql
   spec:
     ports:
