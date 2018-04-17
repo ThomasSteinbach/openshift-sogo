@@ -3,25 +3,6 @@ items:
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    labels:
-      app: nextcloud
-    name: mysql
-  spec:
-    lookupPolicy:
-      local: false
-    tags:
-    - annotations:
-        openshift.io/imported-from: mysql:5.7
-      from:
-        kind: DockerImage
-        name: mysql:5.7
-      importPolicy: {}
-      name: "latest"
-      referencePolicy:
-        type: Source
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
     annotations: {}
     creationTimestamp: null
     labels:
@@ -37,6 +18,27 @@ items:
       from:
         kind: DockerImage
         name: memcached:1-alpine
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations: {}
+    creationTimestamp: null
+    labels:
+      app: sogo
+    name: mysql
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: mysql:5.7
+      from:
+        kind: DockerImage
+        name: mysql:5.7
       importPolicy: {}
       name: latest
       referencePolicy:
@@ -173,9 +175,10 @@ items:
     resources: {}
     runPolicy: Serial
     source:
-      git:
-        uri: "https://gitlab.com/thomassteinbach/openshift-sogo.git"
       contextDir: dockercontext/sogo
+      git:
+        uri: https://gitlab.com/thomassteinbach/openshift-sogo.git
+      type: Git
     strategy:
       dockerStrategy: {}
       type: Docker
@@ -207,9 +210,10 @@ items:
     resources: {}
     runPolicy: Serial
     source:
-      git:
-        uri: "https://gitlab.com/thomassteinbach/openshift-sogo.git"
       contextDir: dockercontext/sogo-httpd
+      git:
+        uri: https://gitlab.com/thomassteinbach/openshift-sogo.git
+      type: Git
     strategy:
       dockerStrategy: {}
       type: Docker
@@ -331,7 +335,7 @@ items:
                 name: sogo-secrets
           - name: MYSQL_DATABASE
             value: sogo
-          image: mysql:5.7
+          image: mysql@sha256:12e70236ec8be07b87a95008a22deb0a2a6289ac81d852e622ea13e8311cec64
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -384,7 +388,7 @@ items:
         from:
           kind: ImageStreamTag
           name: mysql:latest
-          namespace: openshift
+          namespace: OC_PROJECT_NAME
       type: ImageChange
     - type: ConfigChange
 - apiVersion: v1
@@ -422,12 +426,14 @@ items:
       spec:
         containers:
         - env:
+          - name: SOGO_MYSQL_USER
+            value: root
           - name: SOGO_MYSQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: database-password
+                key: database-root-password
                 name: sogo-secrets
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:6bea3ee0979a208545bb053de86a2920414c8f90b3c84d22c53de6a174b0d883
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:311c220291a1f48edb562ffdc118ec33a01f5877ec483170d0517371ab4350b1
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 5
@@ -524,7 +530,7 @@ items:
         - env:
           - name: SERVER_NAME
             value: sogo-httpd-sogo.127.0.0.1.nip.io
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:f18f1fa135ea35483d7546c0f194c444535dbd12fa1457fb657671d498d7954e
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:77afeccd046168d07e4e028badbe6b550f76c04b36d86b02a7743b17e5b8c344
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 5
