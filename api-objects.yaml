@@ -86,6 +86,13 @@ items:
       referencePolicy:
         type: Source
 - apiVersion: v1
+  data:
+    SERVER_NAME: sogo.xarif.de
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    name: sogo-conf
+- apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
     annotations: {}
@@ -335,7 +342,7 @@ items:
                 name: sogo-secrets
           - name: MYSQL_DATABASE
             value: sogo
-          image: mysql@sha256:12e70236ec8be07b87a95008a22deb0a2a6289ac81d852e622ea13e8311cec64
+          image: mysql@sha256:3c993a4fe9bf642fa160289187f9b377c758cb75cc9e63c61a977fdc40d96b65
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -433,7 +440,7 @@ items:
               secretKeyRef:
                 key: database-root-password
                 name: sogo-secrets
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:311c220291a1f48edb562ffdc118ec33a01f5877ec483170d0517371ab4350b1
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:832cbff084c42361839e91a31ae60caa2606f7e2d63b8f606f69a61622fe071d
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 5
@@ -529,8 +536,11 @@ items:
         containers:
         - env:
           - name: SERVER_NAME
-            value: sogo-httpd-sogo.127.0.0.1.nip.io
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:77afeccd046168d07e4e028badbe6b550f76c04b36d86b02a7743b17e5b8c344
+            valueFrom:
+              configMapKeyRef:
+                key: SERVER_NAME
+                name: sogo-conf
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:138dd2405b0d135c0dd132fc9b3999b9e34cf1340785c346a94223e386db8b12
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 5
@@ -654,16 +664,17 @@ items:
 - apiVersion: v1
   kind: Route
   metadata:
-    annotations:
-      openshift.io/host.generated: 'true'
     creationTimestamp: null
     labels:
-      app: sogo
+      app: sogo-httpd
     name: sogo-httpd
   spec:
-    host: sogo-httpd-OC_PROJECT_NAME.127.0.0.1.nip.io
+    host: OC_PROJECT_NAME.xarif.de
     port:
       targetPort: 80-tcp
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
     to:
       kind: Service
       name: sogo-httpd
