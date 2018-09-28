@@ -90,6 +90,7 @@ items:
     SERVER_NAME: sogo.xarif.de
   kind: ConfigMap
   metadata:
+    annotations: {}
     creationTimestamp: null
     name: sogo-conf
 - apiVersion: v1
@@ -342,7 +343,7 @@ items:
                 name: sogo-secrets
           - name: MYSQL_DATABASE
             value: sogo
-          image: mysql@sha256:3c993a4fe9bf642fa160289187f9b377c758cb75cc9e63c61a977fdc40d96b65
+          image: mysql@sha256:81679f23e0ece3e50a7300050191272e5afbf5b66be9b60d2ee0e8b575b152e2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -440,7 +441,7 @@ items:
               secretKeyRef:
                 key: database-root-password
                 name: sogo-secrets
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:832cbff084c42361839e91a31ae60caa2606f7e2d63b8f606f69a61622fe071d
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo@sha256:cffc0781192dff2eca4bd62a85d3c6714d138cb697d579b592c860a569b2ec1b
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 5
@@ -540,7 +541,7 @@ items:
               configMapKeyRef:
                 key: SERVER_NAME
                 name: sogo-conf
-          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:138dd2405b0d135c0dd132fc9b3999b9e34cf1340785c346a94223e386db8b12
+          image: 172.30.1.1:5000/OC_PROJECT_NAME/sogo-httpd@sha256:75ecc60216fe0d05cea709c93addacfcc5377a34be0820fec29248458f1ad70c
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 5
@@ -664,6 +665,7 @@ items:
 - apiVersion: v1
   kind: Route
   metadata:
+    annotations: {}
     creationTimestamp: null
     labels:
       app: sogo-httpd
